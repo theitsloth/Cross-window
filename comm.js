@@ -87,7 +87,7 @@ function Comm() {
 				console.log(this);
 				this.name = name;
 				this.secret = res.secret;
-				resolve(res);
+				resolve();
 			}
 		});
 	});
@@ -99,7 +99,7 @@ function Comm() {
 			secret: this.secret,
 		};
 		send(msg, res => {
-			if (res.success) resolve(res);
+			if (res.success) resolve();
 			else reject(res);
 		})
 	});
