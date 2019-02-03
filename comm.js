@@ -125,7 +125,7 @@ function Comm() {
 	});
 	//#endregion req/res
 	//#region pub/sub
-	pub = (channel, data) => new Promise((resolve, reject) => {
+	publish = (channel, data) => new Promise((resolve, reject) => {
 		var msg = {
 			type: "pub",
 			channel,
@@ -136,7 +136,7 @@ function Comm() {
 			else resolve(res.clients);
 		});
 	});
-	sub = (channel, handler) => new Promise((resolve, reject) => {
+	subscribe = (channel, handler) => new Promise((resolve, reject) => {
 		if (typeof handler !== "function")
 			reject(new Error("Handler must be a function!"));
 		var msg = {
@@ -155,7 +155,7 @@ function Comm() {
 			}
 		})
 	});
-	unsub = (channel) => new Promise((resolve, reject) => {
+	unsubscribe = (channel) => new Promise((resolve, reject) => {
 		var id = subs.find(x => x.channel === channel).id;
 		var msg = {
 			type: "unsub",
