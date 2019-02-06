@@ -57,9 +57,10 @@ function Comm() {
 	handleRequest = async (msg) => {
 		var ret;
 		try {
-			if (typeof this.requestHandler === "function")
-				return this.requestHandler(msg.data);
-			else return await this.requestHandler(msg.data);
+			ret = this.requestHandler(msg.data);
+			if (ret instanceof Promise)
+				return await ret;
+			else return ret;
 		} catch(e) {
 			throw e;
 		}
@@ -106,9 +107,9 @@ function Comm() {
 	//#endregion reg/unreg
 	//#region req/res
 	this.onRequest = (handler) => {
-		if (typeof handler !== "function" && !(handler instanceof Promise))
+		if (typeof handler !== "function")
 			throw new Error("The handler doesn't seem to be \
-							a function or a promise.");
+							a function.");
 		this.requestHandler = handler;
 	}
 	this.request = (name, data) => new Promise((resolve, reject) => {
@@ -119,7 +120,7 @@ function Comm() {
 		};
 		send(msg, res => {
 			if (res.error) reject(res);
-			else if (res.data.error) reject(res.data.value);
+			else if (res.data && res.data.error) reject(res.data.value);
 			else resolve(res.data.value);
 		});
 	});
