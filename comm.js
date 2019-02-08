@@ -1,4 +1,4 @@
-DEBUG = true;
+DEBUG = false;
 function Comm() {
 	//#region state containers
 	this.protocol = "SimpleCWCv0";
@@ -85,7 +85,6 @@ function Comm() {
 		send(msg, res => {
 			if (res.error) reject(res);
 			else {
-				console.log(this);
 				this.name = name;
 				this.secret = res.secret;
 				resolve();

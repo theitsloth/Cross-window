@@ -47,6 +47,7 @@
  * >.previous = Any
  * Memory = Dict<VarName, Any>
  */
+DEBUG = false;
 (function(stdlib){
 	// State containers
 	addressBook = [];
