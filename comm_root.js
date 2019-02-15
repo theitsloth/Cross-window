@@ -3,7 +3,7 @@
  * message.protocol = "SimpleCWCv0";
  * message.phase = "server" | "client";
  * message.type = "req" | "res" | "sub" | "unsub" | "pub" |
- * 	              "reg" | "unreg" | "error"
+ * 	              "reg" | "unreg" | "add" | "del" | "qry" | "error"
  * message.messageId = MsgId
  * 
  * error:
@@ -46,6 +46,17 @@
  * set.value = Any
  * >.previous = Any
  * Memory = Dict<VarName, Any>
+ * 
+ * add/del/qry:
+ * add.secret = Secret
+ * add.name = ListName
+ * >.list = Array<Name>
+ * del.secret = Secret
+ * del.name = ListName
+ * >.list = Array<Name>
+ * qry.name = ListName
+ * >.list = Array<Name>
+ * Lists = Dict<string, Array<Name>>
  */
 DEBUG = false;
 (function(stdlib){
@@ -54,6 +65,7 @@ DEBUG = false;
 	replyCodes = [];
 	listeners = [];
 	memory = {};
+	lists = {};
 	//#region Miscellaneous
 	var protocol = "SimpleCWCv0";
 	function generateId() {
@@ -216,6 +228,48 @@ DEBUG = false;
 				return;
 			}
 			//#endregion
+			//#region add/del/qry
+			else if (msg.type === "add") {
+				var addr = addressBook.find(x => x.secret === msg.secret)
+				if (addr === null)
+					throw BadSecretError(msg.secret);
+				var name = addr.name;
+				if (lists[msg.name] === undefined) lists[msg.name] = [];
+				lists[msg.name].push(name);
+				send(sender, {
+					messageId: msg.messageId,
+					list: lists[msg.name],
+				});
+				return;
+			}
+			else if (msg.type = "del") {
+				var addr = addressBook.find(x => x.secret === msg.secret)
+				if (addr === null)
+					throw BadSecretError(msg.secret);
+				var name = addr.name;
+				if (lists[msg.name] === undefined || 
+					!lists[msg.name].find(x => x == name)) 
+					throw NotInListError(name, msg.name);
+				lists[msg.name] = list[msg.name].filter(x => x != name);
+				send(sender, {
+					messageId: msg.messageId,
+					list: lists[msg.name],
+				});
+				return;
+			}
+			else if (msg.type === "qry") {
+				if (lists[msg.name] === undefined) send(sender, {
+					messageId: msg.messageId,
+					list: [],
+				});
+				else send(sender, {
+					messageId: msg.messageId,
+					list: lists[msg.name],
+				});
+				return;
+			}
+			//#endregion
+			
 		} catch(e) {
 			e.messageId = msg.messageId;
 			console.log(e);
@@ -268,6 +322,14 @@ DEBUG = false;
 			"The ID doesn't refer to any subscription. \
 			Maybe you tried to unsubscribe twice?",
 			{id}
+		)
+	}
+	function NotInListError(name, list) {
+		return new Error(
+			"NameNotFound",
+			"Your name wasn't found in the specified list. \
+			Maybe you tried to delete yourself twice?",
+			{name, list}
 		)
 	}
 	//#endregion

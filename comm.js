@@ -125,7 +125,7 @@ function Comm() {
 	});
 	//#endregion req/res
 	//#region pub/sub
-	publish = (channel, data) => new Promise((resolve, reject) => {
+	this.publish = (channel, data) => new Promise((resolve, reject) => {
 		var msg = {
 			type: "pub",
 			channel,
@@ -136,7 +136,7 @@ function Comm() {
 			else resolve(res.clients);
 		});
 	});
-	subscribe = (channel, handler) => new Promise((resolve, reject) => {
+	this.subscribe = (channel, handler) => new Promise((resolve, reject) => {
 		if (typeof handler !== "function")
 			reject(new Error("Handler must be a function!"));
 		var msg = {
@@ -155,7 +155,7 @@ function Comm() {
 			}
 		})
 	});
-	unsubscribe = (channel) => new Promise((resolve, reject) => {
+	this.unsubscribe = (channel) => new Promise((resolve, reject) => {
 		var id = subs.find(x => x.channel === channel).id;
 		var msg = {
 			type: "unsub",
@@ -171,7 +171,7 @@ function Comm() {
 	});
 	//#endregion pub/sub
 	//#region get/set
-	get = (name) => new Promise((resolve, reject) => {
+	this.get = (name) => new Promise((resolve, reject) => {
 		var msg = {
 			type: "get",
 			name: name,
@@ -181,7 +181,7 @@ function Comm() {
 			else resolve(res.value);
 		});
 	});
-	set = (name, value) => new Promise((resolve, reject) => {
+	this.set = (name, value) => new Promise((resolve, reject) => {
 		var msg = {
 			type: "set",
 			name: name,
@@ -193,6 +193,37 @@ function Comm() {
 		});
 	});
 	//#endregion get/set
+	//#region add/del/qry
+	this.addTo = (name) => new Promise((resolve, reject) => {
+		var msg = {
+			type: "add",
+			secret: this.secret,
+			name,
+		};
+		send(msg, res => {
+			if (res.error) reject(res);
+			else resolve(res.list);
+ 		});
+	});
+	this.delFrom = (name) => new Promise((resolve, reject) => {
+		var msg = {
+			type: "del",
+			secret: this.secret,
+			name,
+		};
+		send(msg, res => {
+			if (res.error) reject(res);
+			else resolve(res.list);
+		});
+	});
+	this.query = (name) => new Promise((resolve, reject) => {
+		var msg = { type: "qry", name };
+		send(msg, res => {
+			if (res.error) reject(res);
+			else resolve(res.list);
+		});
+	});
+	//#endregion add/del/qry
 	//#endregion public
 	window.addEventListener("message", receiveMessage, false);
 }
