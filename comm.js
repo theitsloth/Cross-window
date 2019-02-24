@@ -48,7 +48,7 @@ function Comm() {
 						value: x
 					}
 				}, rec => {
-					if (type !== "receipt")
+					if (rec.type !== "receipt")
 						throw new Error("Fatal error on reply!");
 				});
 			});
@@ -245,3 +245,14 @@ Comm.getTopWindow = function() {
 	return cur;
 };
 //#endregion
+
+async function Once(name) {
+	var client = new Comm();
+	await client.register(name);
+	return await new Promise((res, rej) =>
+	client.onRequest(async m => {
+		await client.unregister()
+			.except(e => rej(e));
+		res(m);
+	}));	
+}
