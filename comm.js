@@ -72,7 +72,7 @@
 		if (typeof name !== "string" && 
 			typeof name !== "number" &&
 			typeof name !== "boolean")
-			throw new TypeError("Name is not a primitive");
+			rej(new TypeError("Name is not a primitive"));
 		const _name = name;
 		var _secret = null;
 		var _handler = null;
@@ -180,8 +180,8 @@
 
 	abide = (name) => new Promise((res, rej) => {
 		try {
-			await listen(name, data => res(data));
-		} catch(e) { rej(e); }
+			listen(name, data => res(data)).catch(e => rej(e));
+		} catch(e) { throw e; }
 	});
 
 	//#endregion Definitions
