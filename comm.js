@@ -194,10 +194,13 @@
 	 */
 	abide = (name) => new Promise((res, rej) => {
 		try {
-			var x = listen(name, data => {
-				x.destroy();
+			var listener;
+			listen(name, data => {
+				listener.destroy();
 				res(data);
-			}).catch(e => rej(e));
+			})
+			.then(ret => listener = ret)
+			.catch(e => rej(e));
 		} catch(e) { throw e; }
 	});
 
