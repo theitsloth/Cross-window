@@ -6,6 +6,24 @@
 	//#region Definitions
 	const protocol = "SimpleCWCv0";
 
+	//#region static
+	generateId = function() {
+		return Math.floor(Math.random() * Math.pow(10, 10));
+	}
+	getTopWindow = function() {
+		var cur = window.self;
+		// change to the local top window
+		cur = cur.top;
+		// If that is a popup
+		while (cur.opener !== null) {
+			// change to its opener's root window
+			cur = cur.opener.top;
+		}
+		// When it's the original, return it
+		return cur;
+	};
+	//#endregion
+
 	// Wrapper for listeners
 	getListener = (id, handler, isPersistent = false) => {
 		if (typeof handler !== "function")
@@ -31,7 +49,7 @@
 			throw new TypeError("Data is not an object!");
 		if (typeof callback !== "function")
 			throw new TypeError("Callback is not a function!");
-		var id = Comm.generateId();
+		var id = generateId();
 		var listener = getListener(id, callback);
 		window.addEventListener("message", listener, false);
 		data.messageId = id;
