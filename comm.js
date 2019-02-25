@@ -187,7 +187,9 @@
 	//#endregion Definitions
 	//#region Exports
 	exports.protocol = protocol;
-	exports.Listen = Listen;
+	exports.listen = listen;
+	exports.request = request;
+	exports.abide = abide;
 
 	//#endregion Exports
 	// ##### Package footer
