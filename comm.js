@@ -64,7 +64,6 @@
 	 * @param {string | number | boolean} name The name of the service 
 	 * @param {function} requestHandler The request handler
 	 * @returns {Promise<{handler: function, name: string | number | boolean, destroy: function}>}
-	 * 
 	 * Listener
 	 */
 	listen = (name, requestHandler) => new Promise((res, rej) => {
@@ -177,6 +176,12 @@
 			else if (res.data && res.data.error) rej(res.data.value);
 			else res(res.data.value);
 		});
+	});
+
+	abide = (name) => new Promise((res, rej) => {
+		try {
+			await listen(name, data => res(data));
+		} catch(e) { rej(e); }
 	});
 
 	//#endregion Definitions
