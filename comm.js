@@ -63,7 +63,8 @@
 	 * Listen on a given name with a given function
 	 * @param {string | number | boolean} name The name of the service 
 	 * @param {function} requestHandler The request handler
-	 * @returns {Promise<{handler: function, name: string | number | boolean, destroy: function}>}
+	 * @async
+	 * @returns {handler: function, name: string | number | boolean, destroy: function}
 	 * Listener
 	 */
 	listen = (name, requestHandler) => new Promise((res, rej) => {
@@ -165,6 +166,13 @@
 		}, true);
 	});
 
+	/** Sends a request to a service and returns the reply
+	 * @param {string | number | boolean} name Name of the service
+	 * @param {any} data Data sent with the request
+	 * @async
+	 * @returns {any} Controlled by service
+	 * @throws {any} Controlled by service
+	 */
 	request = (name, data) => new Promise((resolve, reject) => {
 		var msg = {
 			type: "req",
@@ -178,9 +186,18 @@
 		});
 	});
 
+	/** Spawns a single-use service that destroys itself 
+	 * immediately after having been triggered.
+	 * @param name Name of the temporary service
+	 * @async
+	 * @returns {any}
+	 */
 	abide = (name) => new Promise((res, rej) => {
 		try {
-			listen(name, data => res(data)).catch(e => rej(e));
+			var x = listen(name, data => {
+				x.destroy();
+				res(data);
+			}).catch(e => rej(e));
 		} catch(e) { throw e; }
 	});
 
