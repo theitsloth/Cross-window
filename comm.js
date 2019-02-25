@@ -31,7 +31,7 @@
 		var ret = (e => {
 			msg = e.data;
 			if (typeof msg !== "object" ||
-				msg.protocol !== this.protocol ||
+				msg.protocol !== protocol ||
 				msg.phase !== "client" ||
 				(id !== undefined && msg.messageId !== id)) return;
 			// Delete self if persistence wasn't required
@@ -39,7 +39,7 @@
 				window.removeEventListener("message", ret, false);
 			// Call the defined handler and return its return value
 			/** @todo Decide thisArg */
-			return handler.call(window, e);
+			return handler.call(window, msg);
 		});
 		return ret;
 	} 
@@ -53,7 +53,7 @@
 		var listener = getListener(id, callback);
 		window.addEventListener("message", listener, false);
 		data.messageId = id;
-		data.protocol = this.protocol;
+		data.protocol = protocol;
 		data.phase = "server";
 		getTopWindow().postMessage(data, "*");
 		return listener;
@@ -127,16 +127,15 @@
 			}
 		});
 		// Construct delegate
-		var delegate = getListener(undefined, async ev => {
-			var msg = ev.data;
+		var delegate = getListener(undefined, async msg => {
 			// If it isn't for us or we aren't listening, return
 			if (msg.target !== name || _status !== 1) return;
 			var replyData = null;
 			try {
 				// Call our handler (catch if it throws)
 				/** @todo define "this" */
-				var handlerReturnValue = ret.handler.call(window, msg.data);
-				if (hendlerReturnValue instanceof Promise) {
+				var handlerReturnValue = listener.handler.call(window, msg.data);
+				if (handlerReturnValue instanceof Promise) {
 					handlerReturnValue = await handlerReturnValue;
 				}
 				replyData = {
@@ -145,9 +144,10 @@
 				};
 			} catch(ex) {
 				if (ex instanceof Error) {
-					throw new Error(
+					console.error(new Error(
 					"Throwing Error objects over message is not supported. "+
-					"Check your code for internal errors.");
+					"Check your code for internal errors."));
+					throw ex;
 				}
 				replyData = {
 					error: true,
@@ -165,16 +165,16 @@
 		}, true);
 	});
 
-	request = (name, data) => new Promise((res, rej) => {
+	request = (name, data) => new Promise((resolve, reject) => {
 		var msg = {
 			type: "req",
 			target: name,
 			data: data,
 		};
-		send(msg, res => {
-			if (res.error || typeof res.data !== "object") rej(res);
-			else if (res.data && res.data.error) rej(res.data.value);
-			else res(res.data.value);
+		send(msg, result => {
+			if (result.error || typeof result.data !== "object") reject(result);
+			else if (result.data && result.data.error) reject(result.data.value);
+			else resolve(result.data.value);
 		});
 	});
 
