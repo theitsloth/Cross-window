@@ -84,7 +84,7 @@ DEBUG = false;
 		return cur;
 	}
 	// Ensure we're top
-	if (getTopWindow() != window.self && !ForceCommRootRole) return;
+	if (getTopWindow() != window.self) return;
 	stdlib.initWindow = getTopWindow();
 	//#endregion
 	//#region logic
