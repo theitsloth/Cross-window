@@ -57,11 +57,11 @@ function Parent(tgt = undefined, service = undefined) {
 			}
 			else if (msg.query) {
 				var names = [];
-				for (var key in Object.keys(service)) {
+				Object.keys(service).forEach( key => {
 					if (service.hasOwnPropery &&
-						!service.hasOwnPropery(key)) continue;
+						!service.hasOwnPropery(key)) return;
 					names.push(key);
-				}
+				});
 				sender.postMessage({
 					id: msg.id,
 					protocol,
