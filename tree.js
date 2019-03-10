@@ -57,7 +57,7 @@ function Parent(tgt = undefined, service = undefined) {
 			}
 			else if (msg.query) {
 				var names = [];
-				for (var key in service.keys()) {
+				for (var key in Object.keys(service)) {
 					if (service.hasOwnPropery &&
 						!service.hasOwnPropery(key)) continue;
 					names.push(key);
@@ -142,7 +142,7 @@ function Child(arg = undefined) {
 			}
 			else if (msg.query) {
 				var names = [];
-				for (var key in service.keys()) {
+				for (var key in Object.keys(service)) {
 					if (service.hasOwnPropery &&
 						!service.hasOwnPropery(key)) continue;
 					names.push(key);
