@@ -91,9 +91,15 @@ DEBUG = false;
 	function send(target, message) {
 		message.protocol = protocol;
 		message.phase = "client";
+		if (target.closed)
+			throw new window.Error("The target window is closed.");
 		target.postMessage(message, "*");
 	}
 	// Event handler
+	/**
+	 * Handles onmessage event, but can be called on anything that fulfills the param interface.
+	 * @param {{data: object, source: {postMessage: function(object, string), closed: boolean}}} event 
+	 */
 	function receiveMessage(event) {
         var msg = event.data;
 		var sender = event.source;
@@ -138,6 +144,10 @@ DEBUG = false;
 			else if (msg.type === "req") {
 				let tgt = addressBook.find(x => x.name === msg.target);
 				if (!tgt) throw NameNotFoundError(msg.target);
+				if (tgt.postable.closed) {
+					addressBook = addressBook.filter(x => x.name === msg.target);
+					throw NameNotFoundError(msg.target);
+				}
 				// Reply code is different so receivers 
 				// can't abuse message id-s
 				var code = generateId();
@@ -148,11 +158,18 @@ DEBUG = false;
 					replyCode: code,
 				});
 				replyCodes[code] = (data) => {
-					send(sender, {
-						data: data,
-						messageId: msg.messageId,
-						type: "res",
-					});
+					try {
+						send(sender, {
+							data: data,
+							messageId: msg.messageId,
+							type: "res",
+						});
+					} catch (e) {
+						console.info("failed to forward reply:",
+							"\nRequest: ", msg, 
+							"\nRequester: ", sender,
+							"\nReply: ", data);
+					}
 				};
 				return;
 			}
@@ -194,14 +211,20 @@ DEBUG = false;
 				});
 			}
 			else if (msg.type === "pub") {
-				listeners.filter(x => x.channel === msg.channel)
-					.forEach(x => { send(x.postable, {
-						type: "pub",
-						data: msg.data,
-						channel: x.channel,
-						listener: x.id,
-					});
+				let dead = [];
+				listeners.filter(x => x.channel === msg.channel).forEach(x => { 
+					try { 
+						send(x.postable, {
+							type: "pub",
+							data: msg.data,
+							channel: x.channel,
+							listener: x.id,
+						});
+					} catch(e) {
+						dead.push(x.id);
+					}
 				});
+				listeners = listeners.filter(x => !(dead.includes(x.id)));
 				send(sender, {
 					messageId: msg.messageId,
 					clients: listeners.filter(x => 
@@ -219,7 +242,7 @@ DEBUG = false;
 				return;
 			}
 			else if (msg.type === "set") {
-				previousValue = memory[msg.value];
+				previousValue = memory[msg.name];
 				memory[msg.name] = msg.value;
 				send(sender, {
 					messageId: msg.messageId,
@@ -272,7 +295,9 @@ DEBUG = false;
 			
 		} catch(e) {
 			e.messageId = msg.messageId;
-			console.log(e);
+			console.error(e);
+			if (e instanceof window.Error)
+				throw e;
 			send(sender, e);
 		}
 	}
@@ -334,5 +359,6 @@ DEBUG = false;
 	}
 	//#endregion
 
-    window.addEventListener("message", receiveMessage, false);
+	window.addEventListener("message", receiveMessage, false);
+	stdlib.receiveMessage = receiveMessage;
 })(window);

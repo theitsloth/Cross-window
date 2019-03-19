@@ -7,10 +7,10 @@
 	const protocol = "SimpleCWCv0";
 
 	//#region static
-	generateId = function() {
+	var generateId = function() {
 		return Math.floor(Math.random() * Math.pow(10, 10));
 	}
-	getTopWindow = function() {
+	var getTopWindow = function() {
 		var cur = window.self;
 		// change to the local top window
 		cur = cur.top;
@@ -25,7 +25,7 @@
 	//#endregion
 
 	// Wrapper for listeners
-	getListener = (id, handler, isPersistent = false) => {
+	var getListener = (id, handler, isPersistent = false) => {
 		if (typeof handler !== "function")
 			throw new TypeError("handler is not a function!");
 		var ret = (e => {
@@ -44,7 +44,7 @@
 		return ret;
 	} 
 
-	send = (data, callback) => {
+	var send = (data, callback) => {
 		if (typeof data !== "object")
 			throw new TypeError("Data is not an object!");
 		if (typeof callback !== "function")
@@ -67,7 +67,7 @@
 	 * @returns {handler: function, name: string | number | boolean, destroy: function}
 	 * Listener
 	 */
-	listen = (name, requestHandler) => new Promise((res, rej) => {
+	var listen = (name, requestHandler) => new Promise((res, rej) => {
 		if (name === undefined) name = generateId();
 		// Define locals
 		if (typeof name !== "string" && 
@@ -94,6 +94,7 @@
 			get name() {
 				return _name;
 			},
+			// Async function
 			get destroy() {
 				return () => new Promise((resolve, reject) => {
 					send({
@@ -173,7 +174,7 @@
 	 * @returns {any} Controlled by service
 	 * @throws {any} Controlled by service
 	 */
-	request = (name, data) => new Promise((resolve, reject) => {
+	var request = (name, data) => new Promise((resolve, reject) => {
 		var msg = {
 			type: "req",
 			target: name,
@@ -192,16 +193,19 @@
 	 * @async
 	 * @returns {any}
 	 */
-	abide = (name) => new Promise((res, rej) => {
+	var abide = (name) => new Promise((res, rej) => {
 		try {
 			var listener;
 			listen(name, data => {
 				listener.destroy();
-				res(data);
+				/* Resolve very soon, but after finish
+				so that the response is sent before
+				we consider the communication complete */
+				setTimeout(() => res(data), 1);
 			})
 			.then(ret => listener = ret)
 			.catch(e => rej(e));
-		} catch(e) { throw e; }
+		} catch(e) { rej(e); }
 	});
 
 	//#endregion Definitions
