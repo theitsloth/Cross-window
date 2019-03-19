@@ -1,6 +1,21 @@
 
 // ##### Package header
-(function(stdlib){
+(function(global){
+	// In a worker
+	if (!global.addEventListener) {
+		let listeners = [];
+		global.addEventListener = h => {
+			if (typeof h !== "function")
+				throw new Error("Listener must be function!");
+			listeners.push(h);
+		}
+		global.removeEventListener = h => {
+			listeners = listeners.filter(x => x !== h);
+		}
+		onmessage = e => {
+			listeners.forEach(l => l.call(global, e));
+		}
+	}
 	var exports = {};
 	
 	//#region Definitions
@@ -11,7 +26,9 @@
 		return Math.floor(Math.random() * Math.pow(10, 10));
 	}
 	var getTopWindow = function() {
-		var cur = window.self;
+		if (!window)
+			throw new Error("Not in a window!");
+		var cur = global.self;
 		// change to the local top window
 		cur = cur.top;
 		// If that is a popup
@@ -36,10 +53,10 @@
 				(id !== undefined && msg.messageId !== id)) return;
 			// Delete self if persistence wasn't required
 			if (!isPersistent) 
-				window.removeEventListener("message", ret, false);
+				global.removeEventListener("message", ret, false);
 			// Call the defined handler and return its return value
 			/** @todo Decide thisArg */
-			return handler.call(window, msg);
+			return handler.call(global, msg);
 		});
 		return ret;
 	} 
@@ -51,11 +68,16 @@
 			throw new TypeError("Callback is not a function!");
 		var id = generateId();
 		var listener = getListener(id, callback);
-		window.addEventListener("message", listener, false);
+		global.addEventListener("message", listener, false);
 		data.messageId = id;
 		data.protocol = protocol;
 		data.phase = "server";
-		getTopWindow().postMessage(data, "*");
+		// In window
+		if (window)
+			getTopWindow().postMessage(data, "*");
+		// In worker
+		else 
+			postMessage(data);
 		return listener;
 	}
 
@@ -102,7 +124,7 @@
 						secret: _secret,
 					}, res => {
 						if (res.success) {
-							window.removeEventListener("message", delegate);
+							global.removeEventListener("message", delegate);
 							_status = 2;
 							_secret = undefined;
 							resolve();
@@ -124,7 +146,7 @@
 			else {
 				_secret = response.secret;
 				_status = 1;
-				window.addEventListener("message", delegate);
+				global.addEventListener("message", delegate);
 				res(listener);
 			}
 		});
@@ -136,7 +158,7 @@
 			try {
 				// Call our handler (catch if it throws)
 				/** @todo define "this" */
-				var handlerReturnValue = listener.handler.call(window, msg.data);
+				var handlerReturnValue = listener.handler.call(global, msg.data);
 				if (handlerReturnValue instanceof Promise) {
 					handlerReturnValue = await handlerReturnValue;
 				}
@@ -217,6 +239,6 @@
 
 	//#endregion Exports
 	// ##### Package footer
-	if (stdlib.Comm !== undefined) console.error("Multiple Comm instances!");
-	stdlib.Comm = exports;
-})(window);
+	if (global.Comm !== undefined) console.error("Multiple Comm instances!");
+	global.Comm = exports;
+})(this);
